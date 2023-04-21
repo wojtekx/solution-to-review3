@@ -1,13 +1,37 @@
-import { removeRequest, getRequest, postRequest } from './api';
+export const BASE_URL = 'https://mate.academy/students-api/';
 
-export const getPostComments = async (postId: number): Promise<Comment[]> => (
-  getRequest(`/comments?postId=${postId}`)
-);
+export async function getComments(postId: number) {
+  const response = await fetch(`${BASE_URL}/comments?postId=${postId}`);
 
-export const removePostComment = async (commentId: number) => (
-  removeRequest(`/comments/${commentId}`)
-);
+  if (!response.ok) {
+    throw new Error(`${response.status} - ${response.statusText}`);
+  }
 
-export const postComment = async (comment: PostComment) => (
-  postRequest('/comments', comment)
-);
+  return response.json();
+}
+
+export async function delComment(id : number) {
+  const result = await fetch(`${BASE_URL}/comments/${id}`, { method: 'DELETE' });
+
+  return result;
+}
+
+export async function postComment(
+  name : string,
+  email : string,
+  body : string,
+  postId: number,
+) {
+  await fetch(`${BASE_URL}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({
+      postId,
+      name,
+      email,
+      body,
+    }),
+  });
+}

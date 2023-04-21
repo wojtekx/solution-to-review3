@@ -1,107 +1,98 @@
-import React, { useState } from 'react';
-import { postComment } from '../../api/comments';
-
 import './NewCommentForm.scss';
-
-import { Loader } from '../Loader';
+import React, { FormEvent, useState } from 'react';
+import { Comment } from '../../react-app-env';
 
 type Props = {
-  postId: number,
-  fetchComments: () => void,
+  commentsList: Comment[] | undefined;
+  setCommentsList: (arg:Comment[]) => void;
 };
 
-export const NewCommentForm: React.FC<Props> = React.memo(({
-  postId,
-  fetchComments,
+export const NewCommentForm: React.FC<Props> = ({
+  commentsList, setCommentsList,
 }) => {
-  const [newCommentName, setNewCommentName] = useState('');
-  const [newCommentEmail, setNewCommentEmail] = useState('');
-  const [newCommentBody, setNewCommentBody] = useState('');
-  const [isInputFill, setIsInputFill] = useState(false);
-  const [isLoading, setLoading] = useState(false);
+  const [yourname, setYourname] = useState('');
+  const [youremail, setYouremail] = useState('');
+  const [yourcomment, setYourcomment] = useState('');
+  const [error, setError] = useState(false);
 
-  const removeFillError = () => {
-    if (isInputFill) {
-      setIsInputFill(false);
+  const addComment = (newComment: Comment) => {
+    if (commentsList) {
+      commentsList.unshift(newComment);
+      const copy = [...commentsList];
+
+      setCommentsList(copy);
     }
   };
 
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewCommentName(event.target.value);
-    removeFillError();
-  };
-
-  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewCommentEmail(event.target.value);
-    removeFillError();
-  };
-
-  const handleBodyChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewCommentBody(event.target.value);
-    removeFillError();
-  };
-
-  const updateComments = async (newComment: PostComment) => {
-    await postComment(newComment);
-    await fetchComments();
-    setLoading(false);
-  };
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitHandler = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!newCommentName || !newCommentEmail || !newCommentBody) {
-      setIsInputFill(true);
-    } else {
-      setLoading(true);
-
+    if (yourname && youremail && yourcomment && commentsList) {
       const newComment = {
-        postId,
-        name: newCommentName,
-        email: newCommentEmail,
-        body: newCommentBody,
+        id: commentsList.length + 1,
+        postId: commentsList[0].postId,
+        name: yourname,
+        email: youremail,
+        body: yourcomment,
       };
 
-      updateComments(newComment);
-      setNewCommentName('');
-      setNewCommentEmail('');
-      setNewCommentBody('');
+      addComment(newComment);
+      setError(false);
+      setYourname('');
+      setYouremail('');
+      setYourcomment('');
+    } else {
+      setError(true);
     }
   };
 
   return (
-    <form className="NewCommentForm" onSubmit={handleSubmit}>
+    <form
+      className="NewCommentForm"
+      onSubmit={submitHandler}
+    >
       <div className="form-field">
         <input
-          value={newCommentName}
           type="text"
           name="name"
           placeholder="Your name"
+          value={yourname}
           className="NewCommentForm__input"
-          onChange={handleNameChange}
+          onChange={(event) => {
+            setYourname(event.target.value);
+          }}
         />
       </div>
 
       <div className="form-field">
         <input
-          value={newCommentEmail}
           type="text"
           name="email"
           placeholder="Your email"
           className="NewCommentForm__input"
-          onChange={handleEmailChange}
+          value={youremail}
+          onChange={(event) => {
+            setYouremail(event.target.value);
+          }}
         />
       </div>
 
       <div className="form-field">
         <textarea
-          value={newCommentBody}
           name="body"
           placeholder="Type comment here"
           className="NewCommentForm__input"
-          onChange={handleBodyChange}
+          value={yourcomment}
+          onChange={(event) => {
+            setYourcomment(event.target.value);
+          }}
         />
       </div>
+      {error && (
+        <div style={{ color: 'red' }}>
+          Add correct data
+        </div>
+      )}
 
       <button
         type="submit"
@@ -109,8 +100,6 @@ export const NewCommentForm: React.FC<Props> = React.memo(({
       >
         Add a comment
       </button>
-      {isLoading && <Loader />}
-      {isInputFill && <h3>Fill all fields</h3>}
     </form>
   );
-});
+};

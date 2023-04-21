@@ -1,93 +1,59 @@
-import React, { useEffect, useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import './App.scss';
 import './styles/general.scss';
-
 import { PostsList } from './components/PostsList';
 import { PostDetails } from './components/PostDetails';
-import { getAllUsers } from './api/users';
-import { getAllPosts, getUserPosts } from './api/posts';
-
-import { Loader } from './components/Loader';
+import { getAllUsers } from './api/api';
+import { User } from './react-app-env';
 
 const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [postId, setPostId] = useState(0);
-  const [selectedUserId, setSelectedUserId] = useState(0);
-
-  const fetchUsers = async () => {
-    setIsLoading(true);
-
-    const usersFromServer = await getAllUsers();
-
-    setUsers(usersFromServer);
-  };
-
-  const fetchPosts = async () => {
-    const postsFromServer = await getAllPosts();
-
-    setPosts(postsFromServer);
-    setIsLoading(false);
-  };
-
-  const fetchUserPosts = async () => {
-    setIsLoading(true);
-    const postsUsersFromServer = await getUserPosts(selectedUserId);
-
-    setPosts(postsUsersFromServer);
-    setIsLoading(false);
-  };
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState('0');
+  const [selectedPostId, setSelectedPostId] = useState<number>();
 
   useEffect(() => {
-    fetchUsers();
+    getAllUsers()
+      .then(response => setAllUsers(response));
   }, []);
-
-  useEffect(() => {
-    if (selectedUserId === 0) {
-      fetchPosts();
-    } else {
-      fetchUserPosts();
-    }
-  }, [selectedUserId]);
 
   return (
     <div className="App">
       <header className="App__header">
-        <label htmlFor="user-selector">
+        <label>
           Select a user: &nbsp;
 
           <select
             className="App__user-selector"
-            id="user-selector"
-            value={selectedUserId}
-            onChange={(event) => setSelectedUserId(+event.target.value)}
+            value={currentUser}
+            onChange={(event) => {
+              setCurrentUser(event.target.value);
+            }}
           >
-            <option value="0">All users</option>
-            {users.map(user => (
-              <option value={user.id}>{user.name}</option>
+            <option value="0" disabled>All users</option>
+            {allUsers.map(user => (
+              <option
+                key={user.id}
+                value={`${user.id}`}
+              >
+                {user.name}
+              </option>
             ))}
           </select>
         </label>
       </header>
-
       <main className="App__main">
         <div className="App__sidebar">
-          {isLoading
-            ? <Loader />
-            : (
-              <PostsList
-                posts={posts}
-                postId={postId}
-                setPostId={setPostId}
-              />
-            )}
+          <PostsList
+            userSelectedId={currentUser}
+            selectPost={setSelectedPostId}
+            post={selectedPostId}
+          />
         </div>
 
         <div className="App__content">
-          {postId !== 0
-            && <PostDetails postId={postId} />}
+          <PostDetails
+            postId={selectedPostId}
+          />
         </div>
       </main>
     </div>
